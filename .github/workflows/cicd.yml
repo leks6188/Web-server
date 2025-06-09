@@ -7,35 +7,27 @@ jobs:
   testing:
     runs-on: ubuntu-latest
 
-    env:
-      PG_NAME: ${{secrets.PG_NAME}}
-      PG_PASSWORD: ${{secrets.PG_PASSWORD}}
-      PG_USER: ${{secrets.PG_USER}}
-      PG_PORT: ${{secrets.PG_PORT}}
-      PG_HOST: ${{secrets.PG_HOST}}
-
     services:
-      postgres_main:
+      postgres:
         image: postgres:latest
         env:
-          POSTGRES_USER: ${{env.PG_USER}}
-          POSTGRES_DB: ${{env.PG_NAME}}
-          POSTGRES_PASSWORD: ${{env.PG_PASSWORD}}
-          POSTGRES_PORT: ${{env.PG_PORT}}
-          POSTGRES_HOST: ${{env.PG_HOST}}
+          POSTGRES_USER: ${{secrets.PG_USER}}
+          POSTGRES_DB: ${{secrets.PG_NAME}}
+          POSTGRES_PASSWORD: ${{secrets.PG_PASSWORD}}
+          POSTGRES_PORT: ${{secrets.PG_PORT}}
         ports:
           - 5432:5432
-        options:
+        options: >-
           --health-cmd pg_isready
           --health-interval 5s
-          --health timeout 5s
+          --health-timeout 5s
           --health-retries 5
 
     steps:
       - name: Проверить изменения
         uses: actions/checkout@v2
 
-      - name: Установка пайтон
+      - name: Установка Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
@@ -49,12 +41,11 @@ jobs:
       - name: Тесты
         run: python webpython/manage.py test
         env:
-          PG_USER: ${{env.PG_USER}}
-          PG_DB: ${{env.PG_NAME}}
-          PG_PASSWORD: ${{env.PG_PASSWORD}}
-          PG_PORT: ${{env.PG_PORT}}
-          PG_HOST: ${{env.PG_HOST}}
-
+          PG_USER: ${{secrets.PG_USER}}
+          PG_NAME: ${{secrets.PG_NAME}}
+          PG_PASSWORD: ${{secrets.PG_PASSWORD}}
+          PG_PORT: ${{secrets.PG_PORT}}
+          PG_HOST: localhost
 
   deploy:
     runs-on: ubuntu-latest
@@ -66,7 +57,7 @@ jobs:
           host: 79.174.80.252
           username: ubuntu
           password: 12345
-          scripts: |
+          script: |
             cd Web-server-demo-Netology/webpython
             git pull
             sudo systemctl restart gunicorn1
